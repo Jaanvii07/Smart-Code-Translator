@@ -8,16 +8,28 @@ import {
 
 const app = express();
 
-// Allow our React frontend to talk to this backend
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://smart-code-translator-rho.vercel.app",
+];
 
-// Convert incoming JSON requests to JavaScript objects
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-// Mount all API routes under /api
 app.use("/api", routes);
 
-// Handle errors
 app.use(notFoundHandler);
 app.use(errorHandler);
 
