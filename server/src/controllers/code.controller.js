@@ -3,7 +3,6 @@ import { analyzeComplexity } from "../services/complexity.service.js";
 import { optimizeCode } from "../services/optimization.service.js";
 import { explainCode } from "../services/explanation.service.js";
 import { createHistoryEntry } from "../services/history.service.js";
-import { data } from "react-router-dom";
 
 export const translate=async(req,res,next)=>{
     try{
