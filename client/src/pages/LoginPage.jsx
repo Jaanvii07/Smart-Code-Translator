@@ -57,7 +57,7 @@ function LoginPage() {
 
       navigate("/");
     } catch (error) {
-      toast.error("An error occurred while processing your request");
+      toast.error(error.response?.data?.message || "An error occurred while processing your request");
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ function LoginPage() {
       toast.success(`Welcome, ${result.user.name}!`);
       navigate("/");
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      toast.error(error.response?.data?.message || "Login failed. Please try again.");
     }
   };
 
@@ -279,7 +279,7 @@ function LoginPage() {
 
             {/* Google SSO — styled wrapper around @react-oauth/google's button
                 since its internal iframe can't take Tailwind classes directly */}
-            <div className="google-btn-wrap w-full flex justify-center overflow-hidden rounded-sm border border-[#1F1F29] hover:border-[#00F2FE]/50 transition-colors">
+            <div className="w-full flex justify-center overflow-hidden rounded-sm border border-[#1F1F29] hover:border-[#00F2FE]/50 transition-colors">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => toast.error("Login failed. Please try again.")}
