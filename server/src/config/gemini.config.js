@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import logger from "./logger.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -11,17 +12,42 @@ export const generateContent = async (prompt) => {
     throw new Error("Prompt is required");
   }
 
-  try {
-    console.log("Prompt:", prompt);
+  const startedAt = Date.now();
 
+  // Metadata only — the prompt itself contains the user's source code and
+  // must never be written to logs.
+  logger.debug(
+    { model: MODEL_NAME, promptLength: prompt.length },
+    "Gemini request started"
+  );
+
+  try {
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
     });
 
+    logger.info(
+      {
+        model: MODEL_NAME,
+        promptLength: prompt.length,
+        responseLength: response.text?.length ?? 0,
+        durationMs: Date.now() - startedAt,
+      },
+      "Gemini request succeeded"
+    );
+
     return response.text;
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    logger.error(
+      {
+        model: MODEL_NAME,
+        promptLength: prompt.length,
+        durationMs: Date.now() - startedAt,
+        err: { name: error.name, message: error.message },
+      },
+      "Gemini request failed"
+    );
     throw error;
   }
 };

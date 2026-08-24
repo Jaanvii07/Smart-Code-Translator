@@ -22,9 +22,11 @@
     "google-auth-library": "^10.9.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.4.0",
-    "mongoose": "^9.7.3"
+    "mongoose": "^9.7.3",
+    "pino": "^10.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "pino-pretty": "^13.1.3"
   }
 }

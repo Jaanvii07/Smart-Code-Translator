@@ -3,62 +3,61 @@ import { analyzeComplexity } from "../services/complexity.service.js";
 import { optimizeCode } from "../services/optimization.service.js";
 import { explainCode } from "../services/explanation.service.js";
 import { createHistoryEntry } from "../services/history.service.js";
+import logger from "../config/logger.js";
 
-export const translate=async(req,res,next)=>{
-    try{
-        const {code, sourceLanguage , targetLanguage}=req.body;
+export const translate = async (req, res, next) => {
+  try {
+    const { code, sourceLanguage, targetLanguage } = req.body;
 
-        if(!code || !sourceLanguage || !targetLanguage){
-            return res.status(400).json({
-                success:false,
-                message: "code, sourceLanguage, and targetLanguage are required.",
-            });
-        }
-
-        const result=await translateCode(code , sourceLanguage , targetLanguage);
-
-        createHistoryEntry({
-            userId: req.user._id,
-            type: "translate",
-            inputCode: code,
-            sourceLanguage,
-            targetLanguage,
-            output: result,
-        }).catch((err) => console.error("Failed to save history:", err.message));
-
-        return res.json({success:true , data:result});
+    if (!code || !sourceLanguage || !targetLanguage) {
+      return res.status(400).json({
+        success: false,
+        message: "code, sourceLanguage, and targetLanguage are required.",
+      });
     }
-    catch(error){
-        next(error);
-    }
+
+    const result = await translateCode(code, sourceLanguage, targetLanguage);
+
+    createHistoryEntry({
+      userId: req.user._id,
+      type: "translate",
+      inputCode: code,
+      sourceLanguage,
+      targetLanguage,
+      output: result,
+    }).catch((err) => logger.error({ err: err.message }, "Failed to save history"));
+
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const analyze=async(req,res,next)=>{
-    try{
-       const { code, language } = req.body;
+export const analyze = async (req, res, next) => {
+  try {
+    const { code, language } = req.body;
 
-       if(!code || !language){
-          return res.status(400).json({
-            success: false,
-            message: "code and language are required.",
-        });
-       }
-
-       const result=await analyzeComplexity(code , language);
-
-       createHistoryEntry({
-        userId: req.user._id,
-        type: "analyze",
-        inputCode: code,
-        sourceLanguage: language,
-        output: result,
-        }).catch((err) => console.error("Failed to save history:", err.message));
-
-        return res.json({ success: true, data: result });
+    if (!code || !language) {
+      return res.status(400).json({
+        success: false,
+        message: "code and language are required.",
+      });
     }
-    catch(error){
-        next(error);
-    }
+
+    const result = await analyzeComplexity(code, language);
+
+    createHistoryEntry({
+      userId: req.user._id,
+      type: "analyze",
+      inputCode: code,
+      sourceLanguage: language,
+      output: result,
+    }).catch((err) => logger.error({ err: err.message }, "Failed to save history"));
+
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const optimize = async (req, res, next) => {
@@ -80,7 +79,7 @@ export const optimize = async (req, res, next) => {
       inputCode: code,
       sourceLanguage: language,
       output: result,
-    }).catch((err) => console.error("Failed to save history:", err.message));
+    }).catch((err) => logger.error({ err: err.message }, "Failed to save history"));
 
     return res.json({ success: true, data: result });
   } catch (error) {
@@ -107,7 +106,7 @@ export const explain = async (req, res, next) => {
       inputCode: code,
       sourceLanguage: language,
       output: result,
-    }).catch((err) => console.error("Failed to save history:", err.message));
+    }).catch((err) => logger.error({ err: err.message }, "Failed to save history"));
 
     return res.json({ success: true, data: result });
   } catch (error) {

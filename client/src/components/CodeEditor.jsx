@@ -1,5 +1,11 @@
+import { useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { MONACO_LANGUAGE_MAP } from "../constants/languages.js";
+import { checkSyntax } from "../utils/syntaxCheck.js";
+import { checkSyntaxTreeSitter } from "../utils/treeSitterCheck.js";
+
+const MARKER_OWNER = "syntaxCheck";
+const DEBOUNCE_MS = 400;
 
 const definePolyGlotTheme = (monaco) => {
   monaco.editor.defineTheme("polyglot-dark", {
@@ -47,10 +53,61 @@ const definePolyGlotTheme = (monaco) => {
 
 function CodeEditor({ code, onChange, language, readOnly = false }) {
   const displayLanguage = MONACO_LANGUAGE_MAP[language] || "plaintext";
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const debounceRef = useRef(null);
+  const requestIdRef = useRef(0);
+
+  const handleMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+  };
+
+  useEffect(() => {
+    if (readOnly) return undefined;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      const requestId = ++requestIdRef.current;
+
+      const editor = editorRef.current;
+      const monaco = monacoRef.current;
+      if (!editor || !monaco) return;
+
+      const model = editor.getModel();
+      if (!model) return;
+
+      let result = await checkSyntaxTreeSitter(code, language);
+      if (!result) {
+        result = checkSyntax(code, language);
+      }
+
+      if (requestIdRef.current !== requestId) return;
+
+      const lineCount = model.getLineCount();
+      const monacoMarkers = result.markers.map((m) => {
+        const lineNumber = Math.min(Math.max(m.line, 1), lineCount);
+        return {
+          startLineNumber: lineNumber,
+          startColumn: 1,
+          endLineNumber: lineNumber,
+          endColumn: model.getLineMaxColumn(lineNumber),
+          message: m.message,
+          severity: monaco.MarkerSeverity.Error,
+        };
+      });
+
+      monaco.editor.setModelMarkers(model, MARKER_OWNER, monacoMarkers);
+    }, DEBOUNCE_MS);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [code, language, readOnly]);
 
   return (
     <div className="flex flex-col h-full w-full rounded-md border border-[#1F1F29] bg-black overflow-hidden">
-      {/* terminal-style tab bar */}
       <div className="flex items-center justify-between px-4 h-10 border-b border-[#1F1F29] bg-[#0B0B0F]/70 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00F2FE] animate-pulse" />
@@ -61,14 +118,7 @@ function CodeEditor({ code, onChange, language, readOnly = false }) {
 
         {readOnly && (
           <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-sm border border-[#7F00FF]/50 text-[#7F00FF] bg-[#7F00FF]/[0.08]">
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <rect x="5" y="11" width="14" height="9" rx="1.5" />
               <path d="M8 11V7a4 4 0 0 1 8 0v4" />
             </svg>
@@ -77,7 +127,6 @@ function CodeEditor({ code, onChange, language, readOnly = false }) {
         )}
       </div>
 
-      {/* editor surface */}
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
@@ -86,6 +135,7 @@ function CodeEditor({ code, onChange, language, readOnly = false }) {
           onChange={(v) => onChange(v || "")}
           theme="polyglot-dark"
           beforeMount={definePolyGlotTheme}
+          onMount={handleMount}
           options={{
             fontSize: 14,
             fontFamily: "'JetBrains Mono', monospace",

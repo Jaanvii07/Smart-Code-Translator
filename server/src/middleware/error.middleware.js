@@ -1,3 +1,5 @@
+import logger from "../config/logger.js";
+
 export const notFoundHandler = (req, res, next) => {
   res.status(404).json({
     success: false,
@@ -6,7 +8,7 @@ export const notFoundHandler = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
-  console.error("Error:", err.message);
+  logger.error({ err: err.message, path: req.originalUrl, method: req.method }, "Request error");
 
   // Respect a status code the error was thrown with (e.g. error.statusCode = 409
   // for "already exists", 400 for validation, etc.) instead of always returning 500.

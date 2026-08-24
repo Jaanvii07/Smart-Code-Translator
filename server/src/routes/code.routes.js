@@ -6,10 +6,12 @@ import {
   explain,
 } from "../controllers/code.controller.js";
 import authenticate from "../middleware/auth.middleware.js";
+import syntaxCheckMiddleware from "../middleware/syntaxCheck.middleware.js";
 
 const router=Router();
 
 router.use(authenticate);
+router.use(syntaxCheckMiddleware);
 
 router.post("/translate" , translate);
 router.post("/analyze", analyze);

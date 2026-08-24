@@ -95,8 +95,10 @@ function HomePage() {
       }));
       toast.success("Done!");
     } catch (err) {
-      if (err.response?.status === 429) {
-        toast.error("Daily AI quota reached. Try again after midnight Pacific time.");
+     if (err.response?.status === 429) {
+         toast.error("Daily AI quota reached. Try again after midnight Pacific time.");
+      } else if (err.response?.status === 422) {
+        toast.error(err.response?.data?.error || err.response?.data?.message || "Syntax error detected.");
       } else {
         toast.error(err.response?.data?.message || "Something went wrong.");
       }

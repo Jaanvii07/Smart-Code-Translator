@@ -1,13 +1,5 @@
-/**
- * Escapes raw control characters (newline, tab, carriage return, etc.)
- * found *inside* JSON string literals. Gemini sometimes returns multi-line
- * text (e.g. a code field or a long explanation) as a real line break
- * instead of an escaped \n, which is invalid JSON and throws "Bad control
- * character in string literal" on JSON.parse. This walks the text
- * character-by-character, tracking whether we're inside a string, and
- * only touches control characters found there — structural JSON
- * whitespace outside strings is left untouched.
- */
+import logger from "../config/logger.js";
+
 const sanitizeJsonControlChars = (str) => {
   let result = "";
   let inString = false;
@@ -82,8 +74,18 @@ export const parseGeminiJSON = (text) => {
     try {
       return JSON.parse(sanitizeJsonControlChars(cleanText));
     } catch (secondError) {
-      console.error("Failed to parse Gemini JSON response:", secondError.message);
-      console.error("Raw response was:", text);
+      // Only log a short, bounded preview — never the full response — since
+      // the response text contains the user's translated/optimized code or
+      // explanation end-to-end. This preview exists purely to diagnose
+      // malformed-JSON structure, not to capture full content.
+      logger.error(
+        {
+          err: secondError.message,
+          responseLength: text.length,
+          responsePreview: text.slice(0, 200),
+        },
+        "Failed to parse Gemini JSON response"
+      );
       throw new Error(
         "Failed to parse AI response. The AI returned an unexpected format.",
       );
